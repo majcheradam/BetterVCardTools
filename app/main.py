@@ -1,11 +1,12 @@
-from fastapi import FastAPI, UploadFile, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import os
 import io
+import os
 
-from .vcards import parse_vcards, contacts_to_vcards40
+from fastapi import FastAPI, Request, UploadFile
+from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from .vcards import contacts_to_vcards40, parse_vcards
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")

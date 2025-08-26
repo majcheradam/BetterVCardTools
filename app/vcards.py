@@ -1,6 +1,8 @@
-import vobject, re
-from typing import List, Dict, Optional
+import re
+from typing import Optional
 from uuid import uuid4
+
+import vobject
 
 CRLF = "\r\n"
 
@@ -18,7 +20,7 @@ def _escape(s: str) -> str:
 _PREFIXES = {"mr", "mrs", "ms", "dr", "prof"}
 _SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "phd", "md"}
 
-def _split_name(fn: str) -> Dict[str, str]:
+def _split_name(fn: str) -> dict[str, str]:
     """Best-effort split of a display name into structured N fields.
     Returns dict with keys: family, given, additional, prefix, suffix.
     """
@@ -30,9 +32,19 @@ def _split_name(fn: str) -> Dict[str, str]:
         return re.sub(r"\.+$", "", t).lower()
     prefix = tokens[0] if norm(tokens[0]) in _PREFIXES else ""
     suffix = tokens[-1] if norm(tokens[-1]) in _SUFFIXES else ""
-    core = tokens[1:-1] if (prefix and suffix) else (tokens[1:] if prefix else (tokens[:-1] if suffix else tokens))
+    core = (
+        tokens[1:-1]
+        if (prefix and suffix)
+        else (tokens[1:] if prefix else (tokens[:-1] if suffix else tokens))
+    )
     if not core:
-        return {"family": "", "given": tokens[0] if tokens else "", "additional": "", "prefix": prefix, "suffix": suffix}
+        return {
+            "family": "",
+            "given": tokens[0] if tokens else "",
+            "additional": "",
+            "prefix": prefix,
+            "suffix": suffix,
+        }
     if len(core) == 1:
         given, family = core[0], ""
         additional = ""
@@ -47,7 +59,7 @@ def _split_name(fn: str) -> Dict[str, str]:
         "suffix": suffix,
     }
 
-def _split_types(val) -> List[str]:
+def _split_types(val) -> list[str]:
     if not val:
         return []
     if isinstance(val, str):
@@ -60,16 +72,15 @@ def _split_types(val) -> List[str]:
         parts = [str(val).strip()]
     return [p.lower() for p in parts]
 
-def _normalize_types(kind: str, types: List[str]) -> List[str]:
+def _normalize_types(kind: str, types: list[str]) -> list[str]:
     # Dedup, lowercase done in _split_types; filter unwanted values
     tset = set(types or [])
     if kind == "email":
         # RFC 6350 removed INTERNET; it's implied, so drop it
         tset.discard("internet")
-    if kind == "tel":
+    if kind == "tel" and len(tset) > 1 and "voice" in tset:
         # Drop 'voice' if there are other types present
-        if len(tset) > 1 and "voice" in tset:
-            tset.remove("voice")
+        tset.remove("voice")
     return sorted(tset)
 
 _KNOWN_TEL_TYPES = {
@@ -77,14 +88,14 @@ _KNOWN_TEL_TYPES = {
 }
 _KNOWN_EMAIL_TYPES = {"home", "work", "internet", "pref", "x-mobileme"}
 
-def _extract_types_from_params(kind: str, params: Dict, singletonparams) -> List[str]:
-    types: List[str] = []
+def _extract_types_from_params(kind: str, params: dict, singletonparams) -> list[str]:
+    types: list[str] = []
     p = params or {}
     # TYPE values (comma-joined or list)
     if 'TYPE' in p:
         types.extend(_split_types(p.get('TYPE')))
     # vCard 2.1 style: bare flags like HOME/WORK appear as parameter keys
-    for key, val in p.items():
+    for key, _val in p.items():
         k = str(key).lower()
         if k == 'type':
             continue
@@ -99,7 +110,7 @@ def _extract_types_from_params(kind: str, params: Dict, singletonparams) -> List
 
 essential_fields = ("fn", "email_list", "tel_list", "org")
 
-def parse_vcards(text: str) -> List[Dict]:
+def parse_vcards(text: str) -> list[dict]:
     """Parse vCard text into a normalized contact dict list.
 
     Output shape per contact:
@@ -113,7 +124,7 @@ def parse_vcards(text: str) -> List[Dict]:
         org: List[str] | None  # structured components
       }
     """
-    contacts: List[Dict] = []
+    contacts: list[dict] = []
     for v in vobject.readComponents(text):
         # FN and structured N
         fn_obj = getattr(v, 'fn', None)
@@ -131,10 +142,7 @@ def parse_vcards(text: str) -> List[Dict]:
             }
         else:
             # Derive a minimal N from FN as best-effort using split helper
-            if fn_val:
-                n_struct = _split_name(str(fn_val))
-            else:
-                n_struct = None
+            n_struct = _split_name(str(fn_val)) if fn_val else None
 
         # Emails with types
         emails = []
@@ -178,7 +186,7 @@ def parse_vcards(text: str) -> List[Dict]:
     return contacts
 
 
-def contact_to_vcard40(c: Dict) -> str:
+def contact_to_vcard40(c: dict) -> str:
     props = [
         "BEGIN:VCARD",
         "VERSION:4.0",
@@ -186,7 +194,13 @@ def contact_to_vcard40(c: Dict) -> str:
     # FN
     name = c.get("name") or "Unnamed"
     # N (structured): family;given;additional;prefix;suffix
-    n_struct = c.get("n") or {"family": "", "given": name, "additional": "", "prefix": "", "suffix": ""}
+    n_struct = c.get("n") or {
+        "family": "",
+        "given": name,
+        "additional": "",
+        "prefix": "",
+        "suffix": "",
+    }
     n_fields = [
         _escape(n_struct.get("family", "")),
         _escape(n_struct.get("given", "")),
@@ -229,5 +243,5 @@ def contact_to_vcard40(c: Dict) -> str:
     return CRLF.join(props) + CRLF
 
 
-def contacts_to_vcards40(contacts: List[Dict]) -> str:
+def contacts_to_vcards40(contacts: list[dict]) -> str:
     return "".join(contact_to_vcard40(c) for c in contacts)
