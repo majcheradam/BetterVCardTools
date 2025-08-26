@@ -1,0 +1,4 @@
+# Code owners for BetterVCardTools
+# Lines are matched in order; the last matching pattern takes precedence.
+# Default: require reviews from repo owner for any change.
+* @majcheradam
