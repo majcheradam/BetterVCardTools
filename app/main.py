@@ -14,6 +14,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.post("/upload")
 async def upload(file: UploadFile):
     data = await file.read()
