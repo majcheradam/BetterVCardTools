@@ -1,5 +1,5 @@
 import vobject, re
-from typing import List, Dict, Optional, TypedDict
+from typing import List, Dict, Optional
 from uuid import uuid4
 
 CRLF = "\r\n"
@@ -14,6 +14,88 @@ def _escape(s: str) -> str:
             .replace(",", r"\\,")
             .replace("\n", r"\\n")
             .replace("\r", ""))
+
+_PREFIXES = {"mr", "mrs", "ms", "dr", "prof"}
+_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "phd", "md"}
+
+def _split_name(fn: str) -> Dict[str, str]:
+    """Best-effort split of a display name into structured N fields.
+    Returns dict with keys: family, given, additional, prefix, suffix.
+    """
+    tokens = [t for t in re.split(r"\s+", (fn or "").strip()) if t]
+    if not tokens:
+        return {"family": "", "given": "", "additional": "", "prefix": "", "suffix": ""}
+    # Normalize helper strips trailing dots for prefix/suffix matching
+    def norm(t: str) -> str:
+        return re.sub(r"\.+$", "", t).lower()
+    prefix = tokens[0] if norm(tokens[0]) in _PREFIXES else ""
+    suffix = tokens[-1] if norm(tokens[-1]) in _SUFFIXES else ""
+    core = tokens[1:-1] if (prefix and suffix) else (tokens[1:] if prefix else (tokens[:-1] if suffix else tokens))
+    if not core:
+        return {"family": "", "given": tokens[0] if tokens else "", "additional": "", "prefix": prefix, "suffix": suffix}
+    if len(core) == 1:
+        given, family = core[0], ""
+        additional = ""
+    else:
+        given, family = core[0], " ".join(core[1:])
+        additional = ""
+    return {
+        "family": family,
+        "given": given,
+        "additional": additional,
+        "prefix": prefix,
+        "suffix": suffix,
+    }
+
+def _split_types(val) -> List[str]:
+    if not val:
+        return []
+    if isinstance(val, str):
+        parts = [p.strip() for p in val.split(",") if p.strip()]
+    elif isinstance(val, list):
+        parts = []
+        for x in val:
+            parts.extend([p.strip() for p in str(x).split(",") if p.strip()])
+    else:
+        parts = [str(val).strip()]
+    return [p.lower() for p in parts]
+
+def _normalize_types(kind: str, types: List[str]) -> List[str]:
+    # Dedup, lowercase done in _split_types; filter unwanted values
+    tset = set(types or [])
+    if kind == "email":
+        # RFC 6350 removed INTERNET; it's implied, so drop it
+        tset.discard("internet")
+    if kind == "tel":
+        # Drop 'voice' if there are other types present
+        if len(tset) > 1 and "voice" in tset:
+            tset.remove("voice")
+    return sorted(tset)
+
+_KNOWN_TEL_TYPES = {
+    "home", "work", "cell", "voice", "fax", "pager", "text", "textphone", "main", "iphone"
+}
+_KNOWN_EMAIL_TYPES = {"home", "work", "internet", "pref", "x-mobileme"}
+
+def _extract_types_from_params(kind: str, params: Dict, singletonparams) -> List[str]:
+    types: List[str] = []
+    p = params or {}
+    # TYPE values (comma-joined or list)
+    if 'TYPE' in p:
+        types.extend(_split_types(p.get('TYPE')))
+    # vCard 2.1 style: bare flags like HOME/WORK appear as parameter keys
+    for key, val in p.items():
+        k = str(key).lower()
+        if k == 'type':
+            continue
+        if kind == 'tel' and k in _KNOWN_TEL_TYPES:
+            types.append(k)
+        if kind == 'email' and k in _KNOWN_EMAIL_TYPES:
+            types.append(k)
+    # singletonparams fallback (some vobject versions)
+    if singletonparams:
+        types.extend(_split_types(singletonparams))
+    return _normalize_types(kind, types)
 
 essential_fields = ("fn", "email_list", "tel_list", "org")
 
@@ -46,30 +128,27 @@ def parse_vcards(text: str) -> List[Dict]:
                 "suffix": nval.suffix or "",
             }
         else:
-            # Derive a minimal N from FN as best-effort
+            # Derive a minimal N from FN as best-effort using split helper
             if fn_val:
-                parts = str(fn_val).strip().split()
-                if len(parts) >= 2:
-                    n_struct = {"family": " ".join(parts[1:]), "given": parts[0], "additional": "", "prefix": "", "suffix": ""}
-                else:
-                    n_struct = {"family": "", "given": parts[0] if parts else "", "additional": "", "prefix": "", "suffix": ""}
+                n_struct = _split_name(str(fn_val))
+            else:
+                n_struct = None
 
         # Emails with types
         emails = []
         for e in getattr(v, 'email_list', []):
-            types = e.params.get('TYPE', []) if hasattr(e, 'params') else []
-            # vobject may provide a single string or list
-            if isinstance(types, str):
-                types = [types]
-            emails.append({"value": e.value, "types": [str(t).lower() for t in types]})
+            params = getattr(e, 'params', {}) or {}
+            singleton = getattr(e, 'singletonparams', []) or []
+            types = _extract_types_from_params('email', params, singleton)
+            emails.append({"value": e.value, "types": types})
 
         # Phones with types
         phones = []
         for p in getattr(v, 'tel_list', []):
-            types = p.params.get('TYPE', []) if hasattr(p, 'params') else []
-            if isinstance(types, str):
-                types = [types]
-            phones.append({"value": p.value, "types": [str(t).lower() for t in types]})
+            params = getattr(p, 'params', {}) or {}
+            singleton = getattr(p, 'singletonparams', []) or []
+            types = _extract_types_from_params('tel', params, singleton)
+            phones.append({"value": p.value, "types": types})
 
         # ORG structured components
         org_list = None
@@ -114,18 +193,19 @@ def contact_to_vcard40(c: Dict) -> str:
 
     # EMAIL
     for e in c.get("emails", []):
-        types = e.get("types", [])
-        type_param = f";TYPE={','.join(sorted(set(t for t in types if t)))}" if types else ""
+        types = _normalize_types("email", e.get("types", []))
+        type_param = f";TYPE={','.join(types)}" if types else ""
         props.append(f"EMAIL{type_param}:{_escape(e.get('value',''))}")
 
     # TEL (VALUE=uri tel:...)
     for p in c.get("phones", []):
         tel_raw = str(p.get("value", ""))
-        tel = re.sub(r"\s+", "", tel_raw)
+        # Remove whitespace and common punctuation, keep leading '+' if present
+        tel = re.sub(r"[\s()\-.]", "", tel_raw)
         if not tel.startswith("tel:"):
             tel = f"tel:{tel}"
-        types = p.get("types", [])
-        type_param = f";TYPE={','.join(sorted(set(t for t in types if t)))}" if types else ""
+        types = _normalize_types("tel", p.get("types", []))
+        type_param = f";TYPE={','.join(types)}" if types else ""
         props.append(f"TEL{type_param};VALUE=uri:{_escape(tel)}")
 
     # ORG structured
@@ -135,8 +215,10 @@ def contact_to_vcard40(c: Dict) -> str:
         ]
         props.append("ORG:" + ";".join(comps))
 
-    # UID
-    props.append(f"UID:{uuid4()}")
+    # PRODID and UID
+    props.append("PRODID:-//BetterVCardTools//v1.0//EN")
+    # UID (RFC 6350 recommends a URI; use UUID URN)
+    props.append(f"UID:urn:uuid:{uuid4()}")
     props.append("END:VCARD")
     return CRLF.join(props) + CRLF
 

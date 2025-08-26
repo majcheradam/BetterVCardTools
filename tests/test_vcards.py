@@ -26,5 +26,5 @@ def test_parse_and_serialize_types_and_org():
     assert re.search(r"^TEL;TYPE=cell,home;VALUE=uri:tel:\+15550100\r?$", out, re.M)
     # EMAIL TYPE=work (allow CRLF)
     assert re.search(r"^EMAIL;TYPE=work:john.doe@example.com\r?$", out, re.M)
-    # UID present (allow CRLF)
-    assert re.search(r"^UID:[0-9a-fA-F-]{36}\r?$", out, re.M)
+    # UID present as UUID URN (allow CRLF)
+    assert re.search(r"^UID:urn:uuid:[0-9a-fA-F-]{36}\r?$", out, re.M)
