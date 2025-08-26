@@ -13,9 +13,8 @@ jobs:
       - name: Merge pull request
         uses: peter-evans/merge-pull-request@v3
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           merge-method: squash
-          commit-title: auto-merge: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})
-          commit-message: |
-            ${{ github.event.pull_request.body }}
+          commit-title: "auto-merge: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
+          commit-message: ${{ github.event.pull_request.body }}
           wait-for-status-checks: true
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
