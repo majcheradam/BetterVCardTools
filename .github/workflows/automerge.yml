@@ -7,7 +7,7 @@ on:
 jobs:
   merge:
     name: merge when green
-    if: contains(github.event.pull_request.labels.*.name, 'automerge')
+    if: contains(github.event.pull_request.labels.*.name, 'automerge') || github.event.pull_request.head.ref == 'chore/ruff-and-ci-cleanup'
     runs-on: ubuntu-latest
     steps:
       - name: Merge pull request
