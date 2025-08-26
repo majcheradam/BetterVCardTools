@@ -8,13 +8,13 @@ on:
     branches: [ "**" ]
 
 jobs:
-  tests-lint-type:
-    name: Tests, Lint, Typecheck (Python ${{ matrix.python-version }})
+  tests:
+    name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.11' ]
+        python-version: [ '3.10', '3.11', '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,10 +24,38 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest ruff mypy
+          pip install -r requirements.txt pytest
       - name: Run tests
         run: pytest -q
-      - name: Lint (ruff)
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Run ruff
         run: ruff check .
-      - name: Type check (mypy)
+
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install mypy and deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt mypy
+      - name: Run mypy
         run: mypy .
