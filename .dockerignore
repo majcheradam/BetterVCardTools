@@ -1,0 +1,25 @@
+# Reduce Docker build context
+.venv/
+venv/
+.git/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyi
+.pytest_cache/
+.DS_Store
+
+# Dev/test only
+.tests/
+tests/
+.github/
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Build
+build/
+dist/
+*.egg-info/

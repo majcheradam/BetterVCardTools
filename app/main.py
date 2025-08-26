@@ -23,8 +23,13 @@ async def upload(file: UploadFile):
     data = await file.read()
     contacts = parse_vcards(data.decode(errors="ignore"))
     vcf_text = contacts_to_vcards40(contacts)
+    # Derive download filename from uploaded file
+    base = (file.filename or "contacts").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    if base.lower().endswith('.vcf'):
+        base = base[:-4]
+    out_name = f"{base}-4.0.vcf"
     return StreamingResponse(
         io.BytesIO(vcf_text.encode("utf-8")),
         media_type="text/vcard; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=contacts-4.0.vcf"},
+        headers={"Content-Disposition": f"attachment; filename={out_name}"},
     )
