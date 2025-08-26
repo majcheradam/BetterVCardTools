@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
+import re
 from uuid import uuid4
 
-import re
 import vobject
 
 from .types import Contact, EmailEntry, NameStruct, PhoneEntry
@@ -81,9 +80,9 @@ def parse_vcards(text: str) -> list[Contact]:
     for v in vobject.readComponents(text):
         # FN and structured N
         fn_obj = getattr(v, "fn", None)
-        fn_val: Optional[str] = fn_obj.value if fn_obj is not None else None
+        fn_val: str | None = fn_obj.value if fn_obj is not None else None
 
-        n_struct: Optional[NameStruct] = None
+        n_struct: NameStruct | None = None
         n_obj = getattr(v, "n", None)
         if n_obj is not None:
             nval = n_obj.value  # vobject.vcard.Name
