@@ -1,0 +1,21 @@
+name: automerge
+
+on:
+  pull_request:
+    types: [labeled, opened, reopened, ready_for_review, synchronize]
+
+jobs:
+  merge:
+    name: merge when green
+    if: contains(github.event.pull_request.labels.*.name, 'automerge')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge pull request
+        uses: peter-evans/merge-pull-request@v3
+        with:
+          merge-method: squash
+          commit-title: auto-merge: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})
+          commit-message: |
+            ${{ github.event.pull_request.body }}
+          wait-for-status-checks: true
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
