@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .vcards import contacts_to_vcards40, parse_vcards
+from .vcards import contacts_to_vcards40, decode_vcard_bytes, parse_vcards
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -23,10 +23,18 @@ async def health():
     return {"status": "ok"}
 
 @app.post("/upload")
-async def upload(file: UploadFile):
+async def upload(
+    file: UploadFile,
+    e164: bool = False,
+    default_region: str | None = None,
+):
     data = await file.read()
-    contacts = parse_vcards(data.decode(errors="ignore"))
-    vcf_text = contacts_to_vcards40(contacts)
+    text = decode_vcard_bytes(data)
+    contacts = parse_vcards(text)
+    options: dict[str, bool | str] = {"e164": bool(e164)}
+    if default_region:
+        options["default_region"] = default_region.upper()
+    vcf_text = contacts_to_vcards40(contacts, options=options)
     # Derive download filename from uploaded file
     base = (file.filename or "contacts").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
     if base.lower().endswith('.vcf'):

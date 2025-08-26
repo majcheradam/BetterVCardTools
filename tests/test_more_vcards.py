@@ -1,6 +1,7 @@
 import re
 
 from app.vcards import contacts_to_vcards40, parse_vcards
+from app.vcards import decode_vcard_bytes
 
 VCARD_21_CHARSET = (
     "BEGIN:VCARD\r\n"
@@ -71,3 +72,22 @@ def test_multiple_contacts_roundtrip():
     # Two cards begin and end
     assert out.count("BEGIN:VCARD") == 2
     assert out.count("END:VCARD") == 2
+
+
+def test_decode_mojibake_like_wlasci(capsys=None):
+    # Simulate a vCard that was Windows-1250 encoded containing 'Właściciel' in NOTE
+    original = (
+        "BEGIN:VCARD\r\n"
+        "VERSION:3.0\r\n"
+        "FN:Test\r\n"
+        "NOTE:Właściciel\r\n"
+        "END:VCARD\r\n"
+    )
+    # Encode as cp1250 (common for Central European Windows exports)
+    data = original.encode("cp1250", errors="ignore")
+    text = decode_vcard_bytes(data)
+    assert "Właściciel" in text
+    contacts = parse_vcards(text)
+    out = contacts_to_vcards40(contacts)
+    # Ensure output remains valid UTF-8 with the correct word
+    assert "Właściciel" in out
