@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable, List
-
+from collections.abc import Iterable
 
 CRLF = "\r\n"
 
@@ -24,7 +23,7 @@ def escape_text(s: object) -> str:
     )
 
 
-def split_types(val: object) -> List[str]:
+def split_types(val: object) -> list[str]:
     if not val:
         return []
     if isinstance(val, str):
@@ -38,7 +37,7 @@ def split_types(val: object) -> List[str]:
     return [p.lower() for p in parts]
 
 
-def normalize_types(kind: str, types: Iterable[str]) -> List[str]:
+def normalize_types(kind: str, types: Iterable[str]) -> list[str]:
     tset = set([t.lower() for t in (types or [])])
     if kind == "email":
         tset.discard("internet")
@@ -63,7 +62,7 @@ KNOWN_TEL_TYPES = {
 KNOWN_EMAIL_TYPES = {"home", "work", "internet", "pref", "x-mobileme"}
 
 
-def extract_types_from_params(kind: str, params: dict, singletonparams) -> List[str]:
+def extract_types_from_params(kind: str, params: dict, singletonparams) -> list[str]:
     types: list[str] = []
     p = params or {}
     if "TYPE" in p:
