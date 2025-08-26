@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:4.0
+N:;Carol;;;
+FN:Carol
+TEL;VALUE=uri:tel:+15550102
+EMAIL:carol@example.com
+ORG:Contoso
+END:VCARD

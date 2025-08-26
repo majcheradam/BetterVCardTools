@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:3.0
+N:;Bob;;;
+FN:Bob
+TEL;TYPE=CELL: +1 555 0101
+EMAIL:bob@example.com
+ORG:Acme Corp
+END:VCARD

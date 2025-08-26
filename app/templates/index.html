@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <label>Upload vCard file (.vcf)<br><input type="file" name="file" required></label><br><br>
+    <button type="submit">Convert to vCard 4.0</button>
+  </form>
+{% endblock %}
