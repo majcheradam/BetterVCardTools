@@ -2,6 +2,16 @@
 
 Upload any vCard file (2.1/3.0/4.0) and download a normalized vCard 4.0.
 
+What we keep today:
+- Name (FN) and structured name (N)
+- Email addresses with normalized TYPEs
+- Phone numbers with normalized TYPEs and VALUE=uri tel:...
+- Organization (ORG) components
+- Birthday (BDAY) if present
+- Notes (NOTE) — multiple notes are preserved
+
+Other properties are currently omitted to keep the output lean; if you need more fields supported, please open an issue or PR.
+
 ## Local dev
 ```bash
 python -m venv .venv && source .venv/bin/activate

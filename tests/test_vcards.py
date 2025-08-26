@@ -13,6 +13,17 @@ SAMPLE = (
     "END:VCARD\r\n"
 )
 
+SAMPLE_WITH_BDAY_NOTES = (
+    "BEGIN:VCARD\r\n"
+    "VERSION:3.0\r\n"
+    "N:Doe;Jane;;;\r\n"
+    "FN:Jane Doe\r\n"
+    "BDAY:1985-07-13\r\n"
+    "NOTE:First line note\r\n"
+    "NOTE:Second line\r\n"
+    "END:VCARD\r\n"
+)
+
 def test_parse_and_serialize_types_and_org():
     contacts = parse_vcards(SAMPLE)
     assert len(contacts) == 1
@@ -29,3 +40,16 @@ def test_parse_and_serialize_types_and_org():
     assert re.search(r"^EMAIL;TYPE=work:john.doe@example.com\r?$", out, re.M)
     # UID present as UUID URN (allow CRLF)
     assert re.search(r"^UID:urn:uuid:[0-9a-fA-F-]{36}\r?$", out, re.M)
+
+
+def test_bday_and_notes_roundtrip():
+    contacts = parse_vcards(SAMPLE_WITH_BDAY_NOTES)
+    assert len(contacts) == 1
+    c = contacts[0]
+    assert c["bday"] == "1985-07-13"
+    assert c["notes"] == ["First line note", "Second line"]
+    out = contacts_to_vcards40(contacts)
+    # BDAY present
+    assert re.search(r"^BDAY:1985-07-13\r?$", out, re.M)
+    # Two NOTE lines preserved
+    assert len(re.findall(r"^NOTE:", out, re.M)) == 2

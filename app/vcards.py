@@ -175,12 +175,41 @@ def parse_vcards(text: str) -> list[dict]:
                 except Exception:
                     org_list = None
 
+        # BDAY (date or datetime or text). Normalize to ISO if possible.
+        bday_val = None
+        bday_obj = getattr(v, 'bday', None)
+        if bday_obj is not None:
+            try:
+                val = bday_obj.value
+                # vobject can yield date/datetime; convert to date string when possible
+                if hasattr(val, 'isoformat'):
+                    # If datetime, take date part
+                    try:
+                        bday_val = val.date().isoformat()
+                    except Exception:
+                        bday_val = val.isoformat()
+                else:
+                    bday_val = str(val)
+            except Exception:
+                bday_val = None
+
+        # NOTE can appear multiple times; collect as list of strings
+        notes_list: list[str] | None = None
+        note_props = getattr(v, 'note_list', None)
+        if note_props is not None:
+            try:
+                notes_list = [str(n.value) for n in (note_props or [])]
+            except Exception:
+                notes_list = None
+
         c = {
             "name": fn_val,
             "n": n_struct,
             "emails": emails,
             "phones": phones,
             "org": org_list,
+            "bday": bday_val,
+            "notes": notes_list,
         }
         contacts.append(c)
     return contacts
@@ -234,6 +263,15 @@ def contact_to_vcard40(c: dict) -> str:
             _escape(str(comp)) for comp in (c.get("org") or [])
         ]
         props.append("ORG:" + ";".join(comps))
+
+    # BDAY (RFC 6350 date-and-or-time). Assume a simple date string like YYYY-MM-DD.
+    if c.get("bday"):
+        props.append(f"BDAY:{_escape(str(c.get('bday')))}")
+
+    # NOTE(s) – write each as separate NOTE property
+    notes = c.get("notes") or []
+    for note in notes:
+        props.append(f"NOTE:{_escape(str(note))}")
 
     # PRODID and UID
     props.append("PRODID:-//BetterVCardTools//v1.0//EN")

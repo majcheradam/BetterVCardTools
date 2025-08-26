@@ -19,6 +19,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR=${{ github.event.pull_request.number }}
-          TITLE="auto-merge: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
-          BODY="${{ github.event.pull_request.body }}"
-          gh pr merge "$PR" --squash --auto --delete-branch --subject "$TITLE" --body "$BODY"
+          # Use defaults for squash commit title/body to avoid issues with newlines in PR body
+          gh pr merge "$PR" --squash --auto --delete-branch
