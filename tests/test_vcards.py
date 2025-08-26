@@ -17,9 +17,9 @@ def test_parse_and_serialize_types_and_org():
     contacts = parse_vcards(SAMPLE)
     assert len(contacts) == 1
     c = contacts[0]
-    assert c["n"]["family"] == "Doe"
-    assert c["n"]["given"] == "John"
-    assert c["org"] == ["Acme", "Sales"]
+    assert c.n.family == "Doe"
+    assert c.n.given == "John"
+    assert c.org == ["Acme", "Sales"]
     # Serialize
     out = contacts_to_vcards40(contacts)
     assert "VERSION:4.0" in out

@@ -43,9 +43,9 @@ def test_v21_charset_and_multiple_fields():
     assert len(contacts) == 1
     c = contacts[0]
     # N + FN parsed (best-effort depends on vobject decoding)
-    assert c["emails"][0]["value"].startswith("john@")
-    assert len(c["emails"]) == 2
-    assert len(c["phones"]) == 2
+    assert c.emails[0].value.startswith("john@")
+    assert len(c.emails) == 2
+    assert len(c.phones) == 2
     out = contacts_to_vcards40(contacts)
     # TEL formatting normalized (no spaces/paren/dashes) and VALUE=uri
     # Allow optional carriage return before newline in CRLF outputs
