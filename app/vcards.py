@@ -116,10 +116,12 @@ def parse_vcards(text: str) -> List[Dict]:
     contacts: List[Dict] = []
     for v in vobject.readComponents(text):
         # FN and structured N
-        fn_val: Optional[str] = getattr(v, 'fn', None).value if hasattr(v, 'fn') else None
+        fn_obj = getattr(v, 'fn', None)
+        fn_val: Optional[str] = fn_obj.value if fn_obj is not None else None
         n_struct = None
-        if hasattr(v, 'n') and getattr(v, 'n', None) is not None:
-            nval = v.n.value  # vobject.vcard.Name
+        n_obj = getattr(v, 'n', None)
+        if n_obj is not None:
+            nval = n_obj.value  # vobject.vcard.Name
             n_struct = {
                 "family": nval.family or "",
                 "given": nval.given or "",
@@ -152,14 +154,18 @@ def parse_vcards(text: str) -> List[Dict]:
 
         # ORG structured components
         org_list = None
-        if hasattr(v, 'org') and v.org is not None:
+        org_obj = getattr(v, 'org', None)
+        if org_obj is not None:
             try:
                 # Typically a list of components
-                vals = v.org.value or []
+                vals = org_obj.value or []
                 org_list = [str(x) for x in vals]
             except Exception:
                 # fallback: treat as a single string
-                org_list = [str(v.org.value)]
+                try:
+                    org_list = [str(org_obj.value)]
+                except Exception:
+                    org_list = None
 
         c = {
             "name": fn_val,

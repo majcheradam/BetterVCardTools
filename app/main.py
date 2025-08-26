@@ -2,12 +2,15 @@ from fastapi import FastAPI, UploadFile, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import os
 import io
 
 from .vcards import parse_vcards, contacts_to_vcards40
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
+# Ensure static directory exists to avoid needing a placeholder file in VCS
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)

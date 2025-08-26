@@ -1,25 +1,27 @@
-# Reduce Docker build context
-.venv/
-venv/
-.git/
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pyi
-.pytest_cache/
-.DS_Store
-
-# Dev/test only
-.tests/
-tests/
-.github/
-
-# Editor/IDE
-.vscode/
-.idea/
-
-# Build
-build/
-dist/
-*.egg-info/
+**/__pycache__
+**/.venv
+**/.classpath
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/bin
+**/charts
+**/docker-compose*
+**/compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md

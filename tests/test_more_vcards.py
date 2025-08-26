@@ -37,8 +37,9 @@ def test_v21_charset_and_multiple_fields():
     assert len(c["phones"]) == 2
     out = contacts_to_vcards40(contacts)
     # TEL formatting normalized (no spaces/paren/dashes) and VALUE=uri
-    assert re.search(r"^TEL;TYPE=home;VALUE=uri:tel:\+?\d+$", out, re.M)
-    assert re.search(r"^TEL;TYPE=work;VALUE=uri:tel:\+?\d+$", out, re.M)
+    # Allow optional carriage return before newline in CRLF outputs
+    assert re.search(r"^TEL;TYPE=home;VALUE=uri:tel:\+?\d+\r?$", out, re.M)
+    assert re.search(r"^TEL;TYPE=work;VALUE=uri:tel:\+?\d+\r?$", out, re.M)
     # Two EMAILs
     assert len(re.findall(r"^EMAIL", out, re.M)) == 2
 
