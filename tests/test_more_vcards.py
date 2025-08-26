@@ -1,5 +1,6 @@
 import re
-from app.vcards import parse_vcards, contacts_to_vcards40
+
+from app.vcards import contacts_to_vcards40, parse_vcards
 
 VCARD_21_CHARSET = (
     "BEGIN:VCARD\r\n"
@@ -23,8 +24,18 @@ VCARD_MISSING_FN_N = (
 )
 
 VCARD_MULTI = (
-    "BEGIN:VCARD\r\nVERSION:3.0\r\nN:Alpha;Ada;;;\r\nFN:Ada Alpha\r\nTEL;TYPE=CELL:+1 111 1111\r\nEND:VCARD\r\n"
-    "BEGIN:VCARD\r\nVERSION:3.0\r\nN:Beta;Bob;;;\r\nFN:Bob Beta\r\nEMAIL:bob@example.com\r\nEND:VCARD\r\n"
+    "BEGIN:VCARD\r\n"
+    "VERSION:3.0\r\n"
+    "N:Alpha;Ada;;;\r\n"
+    "FN:Ada Alpha\r\n"
+    "TEL;TYPE=CELL:+1 111 1111\r\n"
+    "END:VCARD\r\n"
+    "BEGIN:VCARD\r\n"
+    "VERSION:3.0\r\n"
+    "N:Beta;Bob;;;\r\n"
+    "FN:Bob Beta\r\n"
+    "EMAIL:bob@example.com\r\n"
+    "END:VCARD\r\n"
 )
 
 def test_v21_charset_and_multiple_fields():

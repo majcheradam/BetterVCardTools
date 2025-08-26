@@ -1,9 +1,9 @@
-import sys, pathlib
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-from app.vcards import parse_vcards, contacts_to_vcards40
+import pathlib
 
-SAMPLES = ROOT / 'tests' / 'smoke_vcards'
+from app.vcards import contacts_to_vcards40, parse_vcards
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SAMPLES = ROOT / "tests" / "smoke_vcards"
 
 def run_one(name: str):
     text = (SAMPLES / name).read_text(encoding='utf-8')

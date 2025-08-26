@@ -1,5 +1,6 @@
-from app.vcards import parse_vcards, contacts_to_vcards40
 import re
+
+from app.vcards import contacts_to_vcards40, parse_vcards
 
 VCARD_21_CHARSET = (
     "BEGIN:VCARD\r\n"
